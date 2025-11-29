@@ -238,15 +238,13 @@ uvicorn src.main:app --reload
 **Description:**  
 Prepare the database schema and initialization SQL for the Order Service.
 
-**Database fields (example):**
-- `id` (UUID or SERIAL PK)
-- `external_id` (optional)
-- `customer_id`
-- `status` (pending/confirmed/cancelled)
-- `total_amount`
-- `currency`
-- `created_at`
-- `updated_at`
+**Database fields (minimal Phase 1 schema):**
+- `id` (SERIAL PRIMARY KEY)
+- `user_id` (INTEGER NOT NULL)
+- `product_id` (INTEGER NOT NULL)
+- `quantity` (INTEGER NOT NULL)
+- `status` (VARCHAR(50) NOT NULL DEFAULT 'created')
+- `created_at` (TIMESTAMP NOT NULL DEFAULT NOW())
 
 **Files to create:**
 - `infra/db/init/001_create_orders_table.sql`
