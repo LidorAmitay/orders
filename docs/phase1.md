@@ -156,66 +156,183 @@ Example log:
 
 ## 8. Tasks Breakdown
 
-### Task 1: Create project folder structure
-services/
-  order-service/
-  activity-service/
-  user-service/
-  notification-service/
-  inventory-service/
-infra/
-  docker-compose.yml
-docs/
-  architecture.md
-  phase1.md
+---
+### Task 1: Initialize Project Structure
 
+**Title:** Create base repository and folder structure  
+**Description:**  
+Set up the initial multi-service directory structure, including `order-service`, `infra`, and `docs`.
 
-### Task 2: Create `docker-compose.yml`
-- Add PostgreSQL container
-- Expose port 5432
-- Add volume for persistence
-- Set environment variables (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+**Subtasks:**
+- Initialize a new Git repository.
+- Create directories:
+  - `services/`
+  - `services/order-service/`
+  - `services/order-service/src/` with subfolders:
+    - `routes/`
+    - `models/`
+    - `services/`
+    - `repository/`
+    - `config/`
+  - `services/order-service/tests/`
+  - `infra/db/init/`
+  - `docs/`
+- Create empty documentation files:
+  - `docs/architecture.md`
+  - `docs/phase1.md`
 
-### Task 3: Implement Order Service skeleton
-- Create `main.py`
-- Add routing configuration
-- Add basic application settings (environment-based)
+**Acceptance Criteria:**
+- Repository structure matches the defined layout.
+- Folder and file skeletons exist and are committed.
 
-### Task 4: Implement database connection layer
-- Create a database module
-- Initialize SQLAlchemy engine or psycopg2/asyncpg connection
-- Add FastAPI startup/shutdown events if applicable
+---
 
-### Task 5: Apply the `orders` table schema
-- Create SQL schema file
-- Apply automatically on startup or manually with an init script
+### Task 2: Document Initial Architecture
 
-### Task 6: Implement POST /orders
-- Validate request body
-- Insert new order into the database
-- Return created order ID and status
+**Title:** Draft initial architecture document  
+**Description:**  
+Create a high-level architecture description covering the system's purpose, components, and Phase 1 scope.
 
-### Task 7: Implement GET /orders/{order_id}
-- Query the database
-- Return order information
-- Return proper 404 if not found
+**Must include:**
+- System overview (Orders & Notifications platform)
+- Current services (Order Service only for now)
+- Chosen tech stack (Python, FastAPI, PostgreSQL, Docker)
+- High-level request flow (Client → API → Order Service → DB)
+- Notes about planned services (Notification Service, User Service, etc.)
 
-### Task 8: Implement logging
-- Create a simple logging utility
-- Print structured logs for important actions:
-  - Order creation
-  - DB failures
-  - Invalid input
+**Acceptance Criteria:**
+- `architecture.md` contains a clear and structured description.
+- Document explains Phase 1 in context of the full system.
 
-### Task 9: Add health check endpoint
-- Implement `GET /health`
-- Return a JSON response indicating service status
+---
 
-### Task 10: Write documentation
-- How to run docker-compose
-- How to start the service locally
-- Example API calls (curl/Postman)
-- Schema overview
+### Task 3: Bootstrap Order Service (FastAPI Skeleton)
+
+**Title:** Implement Order Service skeleton with health endpoint  
+**Description:**  
+Create a minimal FastAPI application with environment-based settings and a basic health endpoint.
+
+**Implementation details:**
+- Add `requirements.txt` including:
+  - fastapi
+  - uvicorn
+  - pydantic
+  - psycopg2-binary or asyncpg
+  - pytest
+- Implement:
+  - `src/main.py` → FastAPI app + `/health` endpoint
+  - `src/config/settings.py` → Pydantic Settings loader using `.env`
+- Run service with:
+uvicorn src.main:app --reload
+
+**Acceptance Criteria:**
+- `/health` returns `200` and `{ "status": "ok" }`
+- Application starts without errors
+- `.env` settings load correctly
+
+---
+
+### Task 4: Create Orders Table (Database Schema)
+
+**Title:** Define and create initial Orders table  
+**Description:**  
+Prepare the database schema and initialization SQL for the Order Service.
+
+**Database fields (example):**
+- `id` (UUID or SERIAL PK)
+- `external_id` (optional)
+- `customer_id`
+- `status` (pending/confirmed/cancelled)
+- `total_amount`
+- `currency`
+- `created_at`
+- `updated_at`
+
+**Files to create:**
+- `infra/db/init/001_create_orders_table.sql`
+
+**Acceptance Criteria:**
+- SQL script exists and runs without errors
+- Table is created successfully when DB container starts
+
+---
+
+### Task 5: Implement Order Model & Repository
+
+**Title:** Implement domain model and DB repository  
+**Description:**  
+Add Pydantic model and repository layer for CRUD operations.
+
+**Implementation details:**
+- `models/order.py` → Pydantic model
+- `repository/orders_repository.py`:
+- `create_order(order)`
+- `get_order_by_id(id)`
+- Repository must use DB config from Settings
+
+**Acceptance Criteria:**
+- Code compiles and repository functions work with real DB
+- No raw SQL inside routes (repository-only)
+
+---
+
+### Task 6: Implement Order API Endpoints
+
+**Title:** Add HTTP endpoints for creating and fetching orders  
+**Description:**  
+Expose REST endpoints:
+
+- `POST /api/v1/orders`
+- `GET /api/v1/orders/{id}`
+
+**Implementation details:**
+- `routes/orders.py` → Router implementation
+- `services/order_service.py` → Minimal business logic
+- Register router in `main.py`
+
+**Acceptance Criteria:**
+- Creating an order persists it in DB
+- Getting an order returns correct data or 404
+- Endpoints tested manually with curl/Postman
+
+---
+
+### Task 7: Dockerize Order Service & Add Docker Compose
+
+**Title:** Add Dockerfile and compose configuration  
+**Description:**  
+Containerize the service and create a multi-container setup for local development.
+
+**compose should include:**
+- `db` (PostgreSQL) with init scripts
+- `order-service` container using Dockerfile
+- Network configuration so app can reach DB
+
+**Acceptance Criteria:**
+- `docker-compose up` runs full environment
+- Order Service connects to DB successfully
+- `/health` and `/orders` endpoints work inside container
+
+---
+
+### Task 8: Add Tests & Developer Documentation
+
+**Title:** Add basic tests and usage instructions  
+**Description:**  
+Ensure minimal test coverage and provide developer onboarding instructions.
+
+**Implementation details:**
+- `tests/test_health.py` → test `/health`
+- `tests/test_orders_api.py` → basic CRUD flow
+- Update `README.md` with:
+- Setup instructions
+- Running locally via Uvicorn
+- Running via Docker Compose
+- Running tests (`pytest`)
+
+**Acceptance Criteria:**
+- All Phase 1 tests pass
+- README is clear, complete, and suitable for new developers
 
 ---
 
@@ -247,6 +364,13 @@ Phase 2 will introduce:
 Phase 1 must be complete before starting Phase 2.
 
 ## Progress Log
-- Task 1 
-- Task 2 
-- Task 3 
+- Task 1 - done
+- Task 2 - done
+- Task 3 - done
+- Task 4 - WIP
+- Task 5 
+- Task 6 
+- Task 7 
+- Task 8 
+- Task 9  
+- Task 10
