@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+
+# IDEs
+.idea/
+.vscode/
+
+# Byte-compiled
+*.egg-info/
+dist/
+build/
+
+# Docker
+*.log
+docker/data/
