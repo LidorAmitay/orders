@@ -365,8 +365,8 @@ Phase 1 must be complete before starting Phase 2.
 - Task 1 - done
 - Task 2 - done
 - Task 3 - done
-- Task 4 - WIP
-- Task 5 
+- Task 4 - done
+- Task 5 - done
 - Task 6 
 - Task 7 
 - Task 8 
