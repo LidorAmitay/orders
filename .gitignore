@@ -20,3 +20,6 @@ build/
 # Docker
 *.log
 docker/data/
+
+# Other
+infra/DEV_CHEATSHEET.md

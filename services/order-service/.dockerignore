@@ -9,7 +9,6 @@ env/
 venv/
 .git
 .gitignore
-tests/
 *.md
 .pytest_cache
 .coverage

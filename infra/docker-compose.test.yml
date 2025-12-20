@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: orderdb_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build:
+      context: ../services/order-service
+      dockerfile: Dockerfile
+    command: pytest -v
+    environment:
+      ORDER_DB_HOST: db
+      ORDER_DB_PORT: 5432
+      ORDER_DB_NAME: orderdb_test
+      ORDER_DB_USER: postgres
+      ORDER_DB_PASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
