@@ -3,16 +3,34 @@ REST API routes for order operations.
 
 This module defines the HTTP endpoints for creating and retrieving orders.
 """
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.models.order import OrderCreate, OrderResponse
-from src.services.order_service import create_order_service, get_order_service
+from src.services.order_service import OrderService
+from src.repository.orders_repository import OrdersRepository
 
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
 
+# ---------- Dependencies ----------
+
+def get_orders_repository() -> OrdersRepository:
+    return OrdersRepository()
+
+
+def get_order_service(
+    repo: OrdersRepository = Depends(get_orders_repository),
+) -> OrderService:
+    return OrderService(repo)
+
+
+# ---------- Routes ----------
+
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
-async def create_order_endpoint(order: OrderCreate) -> OrderResponse:
+async def create_order_endpoint(
+    order: OrderCreate,
+    service: OrderService = Depends(get_order_service),
+) -> OrderResponse:
     """
     Create a new order.
     
@@ -26,7 +44,7 @@ async def create_order_endpoint(order: OrderCreate) -> OrderResponse:
         HTTPException: If order creation fails
     """
     try:
-        return create_order_service(order)
+        return service.create_order(order)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -35,7 +53,10 @@ async def create_order_endpoint(order: OrderCreate) -> OrderResponse:
 
 
 @router.get("/{id}", response_model=OrderResponse)
-async def get_order_endpoint(id: int) -> OrderResponse:
+async def get_order_endpoint(
+    id: int,
+    service: OrderService = Depends(get_order_service),
+) -> OrderResponse:
     """
     Retrieve an order by its ID.
     
@@ -49,7 +70,7 @@ async def get_order_endpoint(id: int) -> OrderResponse:
         HTTPException: 404 if order not found, 500 if database error occurs
     """
     try:
-        order = get_order_service(id)
+        order = service.get_order_by_id(id)
         if order is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

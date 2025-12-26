@@ -5,40 +5,46 @@ This layer acts as an intermediary between the API routes and the repository lay
 providing a place for business logic and orchestration.
 """
 from typing import Optional
-
 from src.models.order import OrderCreate, OrderResponse
-from src.repository.orders_repository import create_order, get_order_by_id
+from src.repository.orders_repository import OrdersRepository
 
 
-def create_order_service(order: OrderCreate) -> OrderResponse:
+class OrderService:
     """
-    Create a new order.
-    
-    Args:
-        order: OrderCreate model with order data
-        
-    Returns:
-        OrderResponse: Created order with generated ID and timestamps
-        
-    Raises:
-        psycopg2.Error: If database operation fails
-        ValueError: If order data is invalid
+    Business logic layer for order operations.
     """
-    return create_order(order)
 
+    def __init__(self, repository: OrdersRepository):
+        self._repository = repository
 
-def get_order_service(order_id: int) -> Optional[OrderResponse]:
-    """
-    Retrieve an order by its ID.
-    
-    Args:
-        order_id: The ID of the order to retrieve
+    def create_order(self, order: OrderCreate) -> OrderResponse:
+        """
+        Create a new order.
         
-    Returns:
-        OrderResponse if order exists, None otherwise
+        Args:
+            order: OrderCreate model with order data
+            
+        Returns:
+            OrderResponse: Created order with generated ID and timestamps
+            
+        Raises:
+            psycopg2.Error: If database operation fails
+            ValueError: If order data is invalid
+        """
+        return self._repository.create_order(order)
+
+    def get_order_by_id(self, order_id: int) -> Optional[OrderResponse]:
+        """
+        Retrieve an order by its ID.
         
-    Raises:
-        psycopg2.Error: If database operation fails
-    """
-    return get_order_by_id(order_id)
+        Args:
+            order_id: The ID of the order to retrieve
+            
+        Returns:
+            OrderResponse if order exists, None otherwise
+            
+        Raises:
+            psycopg2.Error: If database operation fails
+        """
+        return self._repository.get_order_by_id(order_id)
 
