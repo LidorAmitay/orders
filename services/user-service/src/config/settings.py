@@ -25,33 +25,23 @@ class Settings(BaseSettings):
     """
     Application configuration container.
 
-    This class loads configuration values from environment variables
-    using Pydantic's BaseSettings model. It provides automatic parsing,
-    type validation, and default values.
-
-    Each field here corresponds to a configuration setting. If a matching
-    environment variable is present, it overrides the default value.
+    Loads configuration from environment variables using Pydantic v2
+    BaseSettings. Values are automatically parsed and validated.
     """
 
-    # General application settings
-    app_name: str = "Order Service"
+    # Application
+    app_name: str = "User Service"
     app_env: AppEnv = AppEnv.dev
 
-    # Database connection configuration
+    # Database
     db_host: str = "localhost"
-    db_port: int = 5432
-    db_name: str = "orderdb"
+    db_port: int = 5433
+    db_name: str = "userdb"
     db_user: str = "postgres"
     db_password: str = "postgres"
 
-    # User Service configuration
-    user_service_url: str = "http://user-service:8000"
-    user_service_timeout: float = 2.0
-
-    # Configuration for the Settings model itself.
-    # env_prefix automatically prepends "ORDER_" to all defined env variables.
     model_config = SettingsConfigDict(
-        env_prefix="ORDER_",   # e.g., ORDER_DB_HOST instead of DB_HOST
+        env_prefix="USER_",     # USER_DB_HOST, USER_APP_ENV, etc.
         case_sensitive=False,   # user_db_host == USER_DB_HOST
         extra="ignore",         # ignore unknown env vars
     )
