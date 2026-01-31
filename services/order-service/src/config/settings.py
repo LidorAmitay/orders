@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     db_user: str = "postgres"
     db_password: str = "postgres"
 
+    # User Service configuration
+    user_service_url: str = "http://user-service:8000"
+    user_service_timeout: float = 2.0
+
     # Configuration for the Settings model itself.
     # env_prefix automatically prepends "ORDER_" to all defined env variables.
     model_config = SettingsConfigDict(

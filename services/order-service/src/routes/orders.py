@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from src.models.order import OrderCreate, OrderResponse
 from src.services.order_service import OrderService
 from src.repository.orders_repository import OrdersRepository
+from src.clients.user_client import UserClient, UserNotFoundError, UserServiceUnavailableError
+from src.config.settings import settings
 
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
@@ -18,10 +20,21 @@ def get_orders_repository() -> OrdersRepository:
     return OrdersRepository()
 
 
+def get_user_client() -> UserClient:
+    """
+    Create UserClient instance with settings from configuration.
+    """
+    return UserClient(
+        base_url=settings.user_service_url,
+        timeout=settings.user_service_timeout
+    )
+
+
 def get_order_service(
     repo: OrdersRepository = Depends(get_orders_repository),
+    user_client: UserClient = Depends(get_user_client),
 ) -> OrderService:
-    return OrderService(repo)
+    return OrderService(repo, user_client)
 
 
 # ---------- Routes ----------
@@ -33,18 +46,28 @@ async def create_order_endpoint(
 ) -> OrderResponse:
     """
     Create a new order.
-    
+
     Args:
         order: OrderCreate model with order data (user_id, product_id, quantity)
-        
+
     Returns:
         OrderResponse: Created order with generated ID and timestamps
-        
+
     Raises:
-        HTTPException: If order creation fails
+        HTTPException: 404 if user not found, 503 if user service unavailable, 500 for other errors
     """
     try:
         return service.create_order(order)
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User not found: {str(e)}"
+        )
+    except UserServiceUnavailableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"User service unavailable: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

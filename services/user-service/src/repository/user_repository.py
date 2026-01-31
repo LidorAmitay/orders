@@ -1,5 +1,6 @@
 from typing import Optional
 
+from psycopg2.extras import RealDictCursor
 from src.models.user import UserCreate, UserInDB
 from src.config.database import get_connection
 
@@ -17,7 +18,7 @@ class UserRepository:
         """
 
         with get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, (user.email, user.name))
                 row = cur.fetchone()
 
@@ -31,7 +32,7 @@ class UserRepository:
         """
 
         with get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, (user_id,))
                 row = cur.fetchone()
 
@@ -48,7 +49,7 @@ class UserRepository:
         """
 
         with get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, (email,))
                 row = cur.fetchone()
 

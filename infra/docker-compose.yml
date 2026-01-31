@@ -30,8 +30,28 @@ services:
       ORDER_DB_NAME: ${ORDER_DB_NAME}
       ORDER_DB_USER: ${ORDER_DB_USER}
       ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
+      ORDER_USER_SERVICE_URL: ${ORDER_USER_SERVICE_URL}
+      ORDER_USER_SERVICE_TIMEOUT: ${ORDER_USER_SERVICE_TIMEOUT}
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ../services/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    environment:
+      USER_DB_HOST: ${USER_DB_HOST}
+      USER_DB_PORT: ${USER_DB_PORT}
+      USER_DB_NAME: ${USER_DB_NAME}
+      USER_DB_USER: ${USER_DB_USER}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD}
+    ports:
+      - "8001:8000"
     depends_on:
       db:
         condition: service_healthy
