@@ -21,6 +21,7 @@ class UserRepository:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, (user.email, user.name))
                 row = cur.fetchone()
+            conn.commit()
 
         return UserInDB.model_validate(row)
 
