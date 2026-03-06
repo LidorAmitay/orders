@@ -69,5 +69,21 @@ services:
     depends_on:
       - db
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   postgres_data:
