@@ -48,6 +48,16 @@ class Settings(BaseSettings):
     user_service_url: str = "http://user-service:8000"
     user_service_timeout: float = 2.0
 
+    # RabbitMQ configuration
+    rabbitmq_host: str = "localhost"
+    rabbitmq_port: int = 5672
+    rabbitmq_user: str = "guest"
+    rabbitmq_password: str = "guest"
+
+    @property
+    def rabbitmq_url(self) -> str:
+        return f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password}@{self.rabbitmq_host}:{self.rabbitmq_port}/"
+
     # Configuration for the Settings model itself.
     # env_prefix automatically prepends "ORDER_" to all defined env variables.
     model_config = SettingsConfigDict(

@@ -7,7 +7,25 @@ import pytest
 import psycopg2
 from psycopg2.extensions import connection
 from typing import Generator
+from unittest.mock import AsyncMock, patch
 from src.config.settings import settings
+
+
+@pytest.fixture(autouse=True)
+def mock_rabbitmq_connection():
+    """
+    Patch aio_pika.connect_robust for all tests so no test attempts a real
+    RabbitMQ connection when the FastAPI lifespan starts via TestClient.
+    """
+    mock_exchange = AsyncMock()
+    mock_channel = AsyncMock()
+    mock_channel.declare_exchange.return_value = mock_exchange
+    mock_connection = AsyncMock()
+    mock_connection.channel.return_value = mock_channel
+    mock_connection.is_closed = False
+
+    with patch("src.messaging.event_publisher.aio_pika.connect_robust", return_value=mock_connection):
+        yield mock_exchange
 
 
 @pytest.fixture(scope="session")
