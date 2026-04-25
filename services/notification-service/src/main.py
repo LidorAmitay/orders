@@ -4,31 +4,26 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.config.settings import settings
+from src.messaging.event_consumer import EventConsumer
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s: %(name)s - %(message)s",
 )
-from src.messaging.event_publisher import EventPublisher
-from src.routes import orders
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    publisher = EventPublisher()
-    await publisher.connect(settings.rabbitmq_url)
-    app.state.event_publisher = publisher
+    consumer = EventConsumer()
+    await consumer.connect(settings.rabbitmq_url)
+    app.state.event_consumer = consumer
     yield
-    await publisher.disconnect()
+    await consumer.disconnect()
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
-
-# Register routers
-app.include_router(orders.router)
 
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
-

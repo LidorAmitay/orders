@@ -1,9 +1,14 @@
+import asyncio
 import pytest
-from unittest.mock import Mock
+from datetime import datetime
+from unittest.mock import AsyncMock, Mock
 from fastapi.testclient import TestClient
 from src.main import app
 from src.routes.orders import get_user_client
 from src.clients.user_client import UserNotFoundError, UserServiceUnavailableError
+from src.messaging.event_publisher import EventPublisher
+from src.models.order import OrderCreate, OrderResponse
+from src.services.order_service import OrderService
 
 
 @pytest.fixture
@@ -19,7 +24,8 @@ def mock_user_client():
 def client(mock_user_client):
     """Create TestClient with mocked UserClient dependency."""
     app.dependency_overrides[get_user_client] = lambda: mock_user_client
-    yield TestClient(app)
+    with TestClient(app) as client:
+        yield client
     app.dependency_overrides.clear()
 
 
@@ -100,8 +106,8 @@ def test_get_order_by_id(client, mock_user_client):
 def test_get_order_not_found():
     """Test retrieving a non-existent order returns 404."""
     # This test doesn't need user validation, so we don't need the mock
-    test_client = TestClient(app)
-    response = test_client.get("/api/v1/orders/99999")
+    with TestClient(app) as test_client:
+        response = test_client.get("/api/v1/orders/99999")
 
     assert response.status_code == 404
     data = response.json()
@@ -164,3 +170,36 @@ def test_user_validation_called_before_db_insert(client, mock_user_client):
 
     # Verify the user validation was called
     mock_user_client.get_user.assert_called_once_with(123)
+
+
+@pytest.mark.unit
+def test_create_order_publishes_event(mock_rabbitmq_connection):
+    """Test that creating an order publishes an order.created event with correct args."""
+    repo = Mock()
+    repo.create_order.return_value = OrderResponse(
+        order_id=1, user_id=1, product_id=100, quantity=2,
+        status="created", created_at=datetime.now(),
+    )
+    user_client = Mock()
+    event_publisher = AsyncMock(spec=EventPublisher)
+
+    service = OrderService(repo, user_client, event_publisher)
+    asyncio.run(service.create_order(OrderCreate(user_id=1, product_id=100, quantity=2)))
+
+    event_publisher.publish_order_created.assert_called_once_with(
+        order_id=1, user_id=1, product_id=100, quantity=2, status="created"
+    )
+
+
+@pytest.mark.unit
+def test_create_order_user_not_found_no_event(mock_rabbitmq_connection):
+    """Test that no event is published when user validation fails."""
+    user_client = Mock()
+    user_client.get_user.side_effect = UserNotFoundError("User 999 not found")
+    event_publisher = AsyncMock(spec=EventPublisher)
+
+    service = OrderService(Mock(), user_client, event_publisher)
+    with pytest.raises(UserNotFoundError):
+        asyncio.run(service.create_order(OrderCreate(user_id=999, product_id=100, quantity=2)))
+
+    event_publisher.publish_order_created.assert_not_called()
