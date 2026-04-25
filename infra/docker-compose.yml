@@ -61,6 +61,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    environment:
+      NOTIFICATION_RABBITMQ_HOST: ${NOTIFICATION_RABBITMQ_HOST}
+      NOTIFICATION_RABBITMQ_PORT: ${NOTIFICATION_RABBITMQ_PORT}
+      NOTIFICATION_RABBITMQ_USER: ${NOTIFICATION_RABBITMQ_USER}
+      NOTIFICATION_RABBITMQ_PASSWORD: ${NOTIFICATION_RABBITMQ_PASSWORD}
+    ports:
+      - "8002:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -83,6 +100,7 @@ services:
       - "5672:5672"    # AMQP
       - "15672:15672"  # Management UI
     volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-custom.conf
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_listener", "5672"]
@@ -93,3 +111,4 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:
